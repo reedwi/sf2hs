@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional, List
 from simple_salesforce import Salesforce
 from rich.console import Console
 from rich.panel import Panel
 from dotenv import load_dotenv
+
+from .migration import get_migration_status
 
 console = Console()
 
@@ -95,114 +97,6 @@ class SalesforceClient:
             ))
             raise
 
-    def _is_system_field(self, field: Dict) -> bool:
-        """Check if a field is a system field that shouldn't be migrated.
-        
-        Args:
-            field: Field metadata dictionary
-            
-        Returns:
-            True if the field is a system field that shouldn't be migrated
-        """
-        system_fields = {
-            'CreatedById', 'LastModifiedById', 'CreatedDate', 'LastModifiedDate',
-            'SystemModstamp', 'LastViewedDate', 'LastReferencedDate'
-        }
-        return field['name'] in system_fields
-
-    def _is_formula_field(self, field: Dict) -> bool:
-        """Check if a field is a formula field.
-        
-        Args:
-            field: Field metadata dictionary
-            
-        Returns:
-            True if the field is a formula field
-        """
-        return field.get('calculated', False)
-
-    def _is_reference_field(self, field: Dict) -> bool:
-        """Check if a field is a reference field.
-        
-        Args:
-            field: Field metadata dictionary
-            
-        Returns:
-            True if the field is a reference field
-        """
-        return field['type'] == 'reference'
-
-    def _is_user_reference(self, field: Dict) -> bool:
-        """Check if a reference field points to a User object.
-        
-        Args:
-            field: Field metadata dictionary
-            
-        Returns:
-            True if the field is a reference to a User object
-        """
-        if not self._is_reference_field(field):
-            return False
-            
-        # Check if the reference is to a User object
-        return field.get('referenceTo', []) == ['User']
-
-    def _is_address_field(self, field: Dict) -> bool:
-        """Check if a field is an address field.
-        
-        Args:
-            field: Field metadata dictionary
-            
-        Returns:
-            True if the field is an address field
-        """
-        return field['type'] == 'address'
-
-    def _get_migration_status(self, field: Dict) -> Dict:
-        """Get migration status and notes for a field.
-        
-        Args:
-            field: Field metadata dictionary
-            
-        Returns:
-            Dictionary containing migration status and notes
-        """
-        status = {
-            'can_migrate': True,
-            'migration_type': 'direct',
-            'notes': []
-        }
-
-        # Check for system fields
-        if self._is_system_field(field):
-            status['can_migrate'] = False
-            status['notes'].append('System field - exists in HubSpot')
-            return status
-
-        # Check for formula fields
-        if self._is_formula_field(field):
-            status['can_migrate'] = False
-            status['notes'].append('Formula field - requires custom implementation')
-            return status
-
-        # Check for reference fields
-        if self._is_reference_field(field):
-            if self._is_user_reference(field):
-                status['migration_type'] = 'user_reference'
-                status['notes'].append('User reference field - will be mapped to HubSpot user field')
-            else:
-                status['migration_type'] = 'association'
-                status['notes'].append('Reference field - usually created as association')
-            return status
-
-        # Check for address fields
-        if self._is_address_field(field):
-            status['can_migrate'] = False
-            status['notes'].append('Address field - compound field type')
-            return status
-
-        return status
-    
     def get_object_fields(self, object_name: str) -> List[Dict]:
         """Get all fields for a Salesforce object.
         
@@ -222,7 +116,7 @@ class SalesforceClient:
             fields = []
             for field in object_desc['fields']:
                 # Get migration status
-                migration_status = self._get_migration_status(field)
+                migration_status = get_migration_status(field)
                 
                 field_info = {
                     'name': field['name'],

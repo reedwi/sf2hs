@@ -34,7 +34,7 @@ dev = [
 ]
 
 [project.scripts]
-sf2hs = "sf2hs.cli.commands:cli"
+sf2hs = "sf2hs.cli:cli"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sf2hs"]

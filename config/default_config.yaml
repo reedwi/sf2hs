@@ -31,31 +31,27 @@ hubspot:
 objects:
   - name: "Account"
     hubspot_object: "company"
-    field_mappings:
-      - salesforce_field: "Name"
-        hubspot_property: "name"
-        type: "string"
-        required: true
-      - salesforce_field: "Industry"
+    # List of fields to extract from Salesforce
+    fields:
+      - name: "Name"
+        hubspot_property: "name"  # Optional: if not specified, uses Salesforce field name
+      - name: "Industry"
         hubspot_property: "industry"
-        type: "string"
-        required: false
+      - name: "Type"
+      - name: "BillingCity"
+        hubspot_property: "city"
 
   - name: "Contact"
     hubspot_object: "contact"
-    field_mappings:
-      - salesforce_field: "FirstName"
+    fields:
+      - name: "FirstName"
         hubspot_property: "firstname"
-        type: "string"
-        required: true
-      - salesforce_field: "LastName"
+      - name: "LastName"
         hubspot_property: "lastname"
-        type: "string"
-        required: true
-      - salesforce_field: "Email"
-        hubspot_property: "email"
-        type: "string"
-        required: true
+      - name: "Email"
+      - name: "Title"
+      - name: "Phone"
+        hubspot_property: "phone_number"
 
 # Sync Settings
 sync_settings:
